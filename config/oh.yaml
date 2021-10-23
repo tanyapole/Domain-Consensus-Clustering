@@ -28,7 +28,7 @@ warmup_steps: 400
 stage_size: 200
 ####dataloader
 num_workers: 2
-batch_size: 36
+batch_size: 8
 num_pclass: 6
 num_sample: 6
 task: officehome
@@ -58,7 +58,7 @@ snapshot: './snapshot'
 ### Visualization
 tensorboard: False
 screen: False
-neptune: False
+neptune: True
 log: './log'
 val_freq: 100
 save_freq: 1000
@@ -66,6 +66,6 @@ print_freq: 1
 
 root: {
         office: /home/guangrui/data/office, 
-        officehome:  /home/guangrui/data/office_home,
+        officehome:  /mnt/tank/scratch/tpolevaya/datasets/office/OfficeHomeDataset_10072016/,
         visda: /home/guangrui/data/visda
         }

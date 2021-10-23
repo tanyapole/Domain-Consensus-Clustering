@@ -24,7 +24,8 @@ class BaseTrainer(object):
         self.writer = writer
         if self.config.neptune:
             name = self.config['note'] + '_' + self.config.source + '_' + self.config.target
-            self.run = neptune.init(project='solacex/UniDA-Extension', name=name,  source_files=[], capture_hardware_metrics=False)#, mode="offline")
+            with open ('/mnt/tank/scratch/tpolevaya/.neptune_token', 'r') as f: token = f.read().strip()
+            self.run = neptune.init(project='tpolevaya/UniDA-Extension', api_token=token, name=name,  source_files=[], capture_hardware_metrics=False)#, mode="offline")
             self.run['config'] = self.config
             self.run['name'] = self.config['note'] + '_' + self.config.source + '_' + self.config.target
         if self.config.tensorboard:

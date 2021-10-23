@@ -14,6 +14,7 @@ import copy
 import numpy as np
 import random
 import importlib
+import os
 domain_list = {}
 domain_list['officehome'] = ['Art','Product','Clipart', 'RealWorld']
 domain_list['office'] = ['amazon', 'webcam', 'dslr']
@@ -22,7 +23,7 @@ def main():
     cudnn.enabled = True
     cudnn.benchmark = True
 
-    config, writer = init_config("config/oh.yml", sys.argv)
+    config, writer = init_config("config/oh.yaml", sys.argv)
 
     Param = importlib.import_module('trainer.{}{}_trainer'.format(config.trainer, config.version))
     if config.setting=='uda':
@@ -70,5 +71,6 @@ def main():
             trainer = Param.Trainer(config, writer)
             trainer.train()
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = '3'
 
     main()
