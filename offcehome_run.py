@@ -55,29 +55,15 @@ def main(source, target):
     config.share_classes  = share_classes
     config.source_classes = share_classes + source_classes
     config.target_classes = share_classes + target_classes
-    index_list = [(2,1), (1,2), (0,2), (2,0), (1,0), (3,2)]
-    #index_list = index_list[2:]
-    transfer_list  = []
-    domains = domain_list[config.task]
-    for src in domains: 
-        for tgt in domains:
-            if src != tgt:
-                transfer_list.append((src, tgt))
-    if not config.transfer_all:
-        trainer = Param.Trainer(config, writer)
-        trainer.train()
-    else:
-        print(transfer_list)
-        for i, (src, tgt) in enumerate(transfer_list):
-            print('{}-->{}'.format(src, tgt))
-            config.source = src
-            config.target = tgt
-            trainer = Param.Trainer(config, writer)
-            trainer.train()
+    trainer = Param.Trainer(config, writer)
+    trainer.train()
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=int, required=True)
+    parser.add_argument('--source', choices=domain_list['officehome'], required=True)
+    parser.add_argument('--target', choices=domain_list['officehome'], required=True)
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 
-    main('a', 'b')
+    main(args.source, args.target)
