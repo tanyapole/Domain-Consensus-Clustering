@@ -59,6 +59,7 @@ snapshot: './snapshot'
 tensorboard: False
 screen: False
 neptune: True
+wandb: True
 log: './log'
 val_freq: 100
 save_freq: 1000

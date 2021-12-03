@@ -1,4 +1,5 @@
 import torch
+import wandb
 torch.multiprocessing.set_sharing_strategy('file_system')
 import torch.nn as nn
 import torch.optim as optim
@@ -56,7 +57,10 @@ def main(source, target):
     config.source_classes = share_classes + source_classes
     config.target_classes = share_classes + target_classes
     trainer = Param.Trainer(config, writer)
+    if config.wandb:
+        run = wandb.init(project='original-DCC', config={'source': config.source, 'target': config.target})
     trainer.train()
+    run.finish()
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

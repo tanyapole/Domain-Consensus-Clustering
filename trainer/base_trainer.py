@@ -16,6 +16,7 @@ from sklearn import metrics
 import sklearn
 from sklearn.cluster import KMeans
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 class BaseTrainer(object):
     def __init__(self, config,  writer):
@@ -72,11 +73,15 @@ class BaseTrainer(object):
             f.write(self.config.source[:2] + '->' + self.config.target[:2] +'[best]: ' + str(self.best) + ' '+ str(self.k_best) + ' [H-Score]: '+ str(self.h_best) + ' ' +  str(self.acc_best_h) + ' '+ str(self.h_best_acc) + ' ' + str(self.best_prec) + ' ' + str(self.best_recall) + '\n')
             f.write(self.config.source[:2] + '->' + self.config.target[:2] +'[last]: ' + str(self.last) + ' '+ str(self.k_last) + ' [H-Score]: '+ str(self.h_last) + ' ' + str(self.last_prec) + ' ' + str(self.last_recall) + '\n')
         f.close()
-    def neptune_metric(self, name, value, display=True):
+    def neptune_metric(self, name, value, display=True, step=None):
         if self.config.neptune:
             self.run[name].log(value)
         if self.config.tensorboard:
-            self.writer.add_scalar(name, value) 
+            self.writer.add_scalar(name, value)
+        if self.config.wandb:
+            D = {name: value}
+            if step is not None: D['step'] = step
+            wandb.log(D)
         if display:
             print('{} is {:.2f}'.format(name, value))
     def print_loss(self, iter):
@@ -88,6 +93,7 @@ class BaseTrainer(object):
         if self.config.neptune:
             for key in self.losses.keys():
                 self.neptune_metric('train/'+key, self.losses[key].item(), False)
+                
         if self.config.tensorboard and self.writer is not None:
             for key in self.losses.keys():
                 self.writer.add_scalar('train/'+key, self.losses[key], iter)

@@ -3,6 +3,7 @@ from model import *
 from dataset import *
 import sklearn
 from utils.joint_memory import Memory
+import wandb
 
 def ExpWeight(step, gamma=3, max_iter=5000, reverse=False):
     step = max_iter-step
@@ -254,7 +255,7 @@ class Trainer(BaseTrainer):
         self.center_history.append(n_center)
         self.config.num_centers=n_center
         self.memory = Memory(self.config.num_centers, feat_dim=self.feat_dim)
-        self.neptune_metric('cluster/num_centers', self.config.num_centers)
+        self.neptune_metric('cluster/num_centers', self.config.num_centers, step=step)
 
         names = list(t_gts.keys())
         id_dict = {}
@@ -320,7 +321,7 @@ class Trainer(BaseTrainer):
 
         label_set = [i[0] for i in filtered_pair]
         plabel_acc = correct/len(filtered_cluster_label)
-        self.neptune_metric('cluster/Plabel Acc', plabel_acc)
+        self.neptune_metric('cluster/Plabel Acc', plabel_acc, step=step)
         self.cluster_mapping = {i[1]:i[0] for i in filtered_pair}
         self.common_cluster_set = [i[1] for i in filtered_pair]
         self.private_label_set = [i for i in range(self.config.num_classes) if i not in label_set]
