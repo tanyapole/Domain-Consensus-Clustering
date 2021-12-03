@@ -15,15 +15,19 @@ import numpy as np
 import random
 import importlib
 import os
+import argparse
+
 domain_list = {}
 domain_list['officehome'] = ['Art','Product','Clipart', 'RealWorld']
 domain_list['office'] = ['amazon', 'webcam', 'dslr']
 
-def main():
+def main(source, target):
     cudnn.enabled = True
     cudnn.benchmark = True
 
     config, writer = init_config("config/oh.yaml", sys.argv)
+    config.source = source
+    config.target = target
 
     Param = importlib.import_module('trainer.{}{}_trainer'.format(config.trainer, config.version))
     if config.setting=='uda':
@@ -71,6 +75,9 @@ def main():
             trainer = Param.Trainer(config, writer)
             trainer.train()
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--device', type=int, required=True)
+    args = parser.parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)
 
-    main()
+    main('a', 'b')
