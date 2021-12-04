@@ -92,7 +92,7 @@ class BaseTrainer(object):
             print(iter_infor +'  '+ loss_infor)
         if self.config.neptune:
             for key in self.losses.keys():
-                self.neptune_metric('train/'+key, self.losses[key].item(), False)
+                self.neptune_metric('train/'+key, self.losses[key].item(), False, step=iter)
                 
         if self.config.tensorboard and self.writer is not None:
             for key in self.losses.keys():
@@ -195,7 +195,7 @@ class BaseTrainer(object):
         if acc > self.best:
             self.best = acc
         self.model.train(True)
-        self.neptune_metric('val/Test Accuracy', acc)
+        self.neptune_metric('val/Test Accuracy', acc, step=i_iter)
         return acc, 0.0, 0.0, 0.0, 0.0
 
     def open_validate(self, i_iter):
@@ -257,12 +257,12 @@ class BaseTrainer(object):
         self.print_acc(accs.avg)
         if uk_index not in accs.avg:
             self.model.train(True)
-            self.neptune_metric('memo-val/Test Accuracy[center]', acc)    
+            self.neptune_metric('memo-val/Test Accuracy[center]', acc, step=i_iter)    
             return acc, acc, 0.0, 0.0, 0.0
         bi_rec = metrics.recall_score(gt_binary, pred_binary, zero_division=0)
         bi_prec = metrics.precision_score(gt_binary, pred_binary, zero_division=0)
-        self.neptune_metric('val/bi recall[center]', bi_rec)
-        self.neptune_metric('val/bi prec[center]', bi_prec)
+        self.neptune_metric('val/bi recall[center]', bi_rec, step=i_iter)
+        self.neptune_metric('val/bi prec[center]', bi_prec, step=i_iter)
 
         k_acc = (acc * len(accs.avg) - accs.avg[uk_index])/(len(accs.avg)-1)
         uk_acc = accs.avg[uk_index]
@@ -274,11 +274,11 @@ class BaseTrainer(object):
                 common_cnt += accs.count[k]
         common_acc = common_sum / common_cnt
         h_score = 2 * (common_acc * uk_acc) / (common_acc + uk_acc)
-        self.neptune_metric('memo-val/H-score', h_score)
+        self.neptune_metric('memo-val/H-score', h_score, step=i_iter)
         self.model.train(True)
-        self.neptune_metric('memo-val/Test Accuracy[center]', acc)
-        self.neptune_metric('memo-val/UK classification accuracy[center]', accs.avg[uk_index])
-        self.neptune_metric('memo-val/Known category accuracy[center]', k_acc)
+        self.neptune_metric('memo-val/Test Accuracy[center]', acc, step=i_iter)
+        self.neptune_metric('memo-val/UK classification accuracy[center]', accs.avg[uk_index], step=i_iter)
+        self.neptune_metric('memo-val/Known category accuracy[center]', k_acc, step=i_iter)
         return acc, k_acc, h_score, bi_rec, bi_prec
 
     def get_src_centers(self):
