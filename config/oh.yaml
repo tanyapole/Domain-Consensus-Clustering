@@ -22,7 +22,7 @@ weight_decay: 0.0005
 power: 0.75 
 gamma: 10
 num_steps: 10000
-stop_steps: 3000 
+stop_steps: 30000 
 warmup: True
 warmup_steps: 400
 stage_size: 200
@@ -58,7 +58,7 @@ snapshot: './snapshot'
 ### Visualization
 tensorboard: False
 screen: False
-neptune: True
+neptune: False
 wandb: True
 log: './log'
 val_freq: 100
