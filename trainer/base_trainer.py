@@ -90,7 +90,7 @@ class BaseTrainer(object):
         loss_infor = '  '.join(to_print)
         if self.config.screen:
             print(iter_infor +'  '+ loss_infor)
-        if self.config.neptune:
+        if self.config.neptune or self.config.wandb:
             for key in self.losses.keys():
                 self.neptune_metric('train/'+key, self.losses[key].item(), False, step=iter)
                 
