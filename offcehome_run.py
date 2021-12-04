@@ -58,9 +58,14 @@ def main(source, target):
     config.target_classes = share_classes + target_classes
     trainer = Param.Trainer(config, writer)
     if config.wandb:
-        run = wandb.init(project='original-DCC', config={'source': config.source, 'target': config.target})
+        run = wandb.init(project='original-DCC', 
+                name=_get_run_name(config.source, config.target),
+                config={'source': config.source, 'target': config.target})
     trainer.train()
     run.finish()
+
+def _get_run_name(source, target):
+    return f'original {source} -> {target}'
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
