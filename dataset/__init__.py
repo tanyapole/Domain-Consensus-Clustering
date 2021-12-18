@@ -1,3 +1,5 @@
+from enum import Enum
+from collections import Counter, OrderedDict
 import numpy as np
 import os.path as osp
 from torch.utils.data import DataLoader, WeightedRandomSampler
@@ -10,6 +12,7 @@ from .path_dataset import PathDataset
 import torch
 import random 
 from .target_dataset import TargetClassAwareDataset
+from sklearn.model_selection import train_test_split
 
 def get_transform(train=True):
     if train:
@@ -47,7 +50,30 @@ def get_path_dataset(config, path_dict, length=None, test=False, batch_size=None
     else:
         return enumerate(loader)
 
-def get_dataset(config, dataset, class_set, label_list=None, test=False, batch_size=None, plabel_dict=None, get_loader=True, length=None, binary_label=None, class_wise=False, validate=False):
+class DatasetTypes(Enum):
+    Common = 'common'
+    Train = 'train'
+    Valid = 'valid'
+
+def _get_label(s:str): return int(s.strip().split()[1])
+def _get_labels(lines): return list(map(_get_label, lines))
+def _get_unique_labels(lines): return np.unique(_get_labels(lines))
+def _count(lines): return Counter(_get_labels(lines))
+def _rel_count(lines):
+    counter = _count(lines)
+    d = OrderedDict()
+    for k in _get_unique_labels(lines):
+        d[k] = counter[k] / len(lines)
+    return d
+
+def _get_train_valid_lines(list_path, class_set):
+    with open(list_path, 'r') as f:
+        lines = f.readlines()
+    lines = list(filter(lambda s: (_get_label(s) in class_set), lines))
+    trn, val = train_test_split(lines, test_size=200, stratify=_get_labels(lines), random_state=0)
+    return trn, val
+ 
+def get_dataset(ds_type:DatasetTypes, config, dataset, class_set, label_list=None, test=False, batch_size=None, plabel_dict=None, get_loader=True, length=None, binary_label=None, class_wise=False, validate=False):
 
     list_path = './dataset/list/{}/{}.txt'.format(config.task,dataset)
     if config.target =='caltech' and config.target==dataset:
@@ -68,6 +94,10 @@ def get_dataset(config, dataset, class_set, label_list=None, test=False, batch_s
     if class_wise:
         TargetClassAwareDataset(root_path, config.num_pclass, transform, class_set, plabel_dict, num_steps=length*config.num_sample)
     else:
+        if ds_type == DatasetTypes.Train:
+            list_path = _get_train_valid_lines(list_path, class_set)[0]
+        elif ds_type == DatasetTypes.Valid:
+            list_path = _get_train_valid_lines(list_path, class_set)[1]
         dataset = BaseDataset(root_path, list_path, transforms, dataset, class_set, num_steps=num_steps, plabel_dict=plabel_dict, binary_label=binary_label)
     if batch_size is None:
         batch_size = config.batch_size
@@ -80,8 +110,8 @@ def get_dataset(config, dataset, class_set, label_list=None, test=False, batch_s
 
 def init_pair_dataset(config, src_wei=None, label_list=None, plabel_dict=None, length=None, binary_label=None):
 
-    src_loader  = get_dataset(config, config.source, config.source_classes, length=length)
-    tgt_loader  = get_dataset(config, config.target, config.target_classes, label_list=label_list,  plabel_dict=plabel_dict, length=length, binary_label=binary_label)
+    src_loader  = get_dataset(DatasetTypes.Train, config, config.source, config.source_classes, length=length)
+    tgt_loader  = get_dataset(DatasetTypes.Common, config, config.target, config.target_classes, label_list=label_list,  plabel_dict=plabel_dict, length=length, binary_label=binary_label)
 
     src_loader = enumerate(src_loader)
     tgt_loader = enumerate(tgt_loader)

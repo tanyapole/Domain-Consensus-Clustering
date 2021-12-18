@@ -39,12 +39,13 @@ class BaseTrainer(object):
         self.label_mask = None
         self.k_converge=False
         self.score_vec = None 
-        self.test_loader = get_dataset(self.config, self.config.target, self.config.target_classes, batch_size=100, test=True, validate=True)
+        self.test_loader = get_dataset(DatasetTypes.Common, self.config, self.config.target, self.config.target_classes, batch_size=100, test=True, validate=True)
         if self.config.task=='imagenet-caltech':
             self.src_loader = get_cls_sep_dataset(self.config, self.config.source, self.config.source_classes, batch_size=100, test=True)
         else:
-            self.src_loader = get_dataset(self.config, self.config.source, self.config.source_classes, batch_size=100, test=True)
-        self.tgt_loader = get_dataset(self.config, self.config.target, self.config.target_classes, batch_size=100, test=True)
+            self.src_loader = get_dataset(DatasetTypes.Train, self.config, self.config.source, self.config.source_classes, batch_size=100, test=True)
+        self.tgt_loader = get_dataset(DatasetTypes.Common, self.config, self.config.target, self.config.target_classes, batch_size=100, test=True)
+        self.valid_loader = get_dataset(DatasetTypes.Valid, self.config, self.config.source, self.config.source_classes, batch_size=100, test=True)
         self.best_prec = 0.0
         self.best_recall = 0.0 
 
@@ -168,7 +169,7 @@ class BaseTrainer(object):
         k_co = 0.0
         uk_co = 0.0
         accs = GroupAverageMeter()
-        test_loader = get_dataset(self.config, self.config.target, self.config.target_classes, batch_size=100, test=True)
+        test_loader = get_dataset(DatasetTypes.Common, self.config, self.config.target, self.config.target_classes, batch_size=100, test=True)
         common_index = torch.Tensor(self.global_label_set).cuda().long()
 
         for _, batch in tqdm(enumerate(test_loader)):
@@ -228,7 +229,7 @@ class BaseTrainer(object):
             gt_all[cnt:cnt+N] = label.squeeze()
             cnt+=N
 
-        clus_mapping = self.cluster_mapping # mapping between source label and target cluster index 
+        clus_mapping = self.cluster_mapping # mapping between source label and target cluster index
 
         uk_null = torch.ones_like(memo_pred_all).float().cuda() * uk_index
         map_mask =  torch.zeros_like(memo_pred_all).float().cuda() 
@@ -244,6 +245,7 @@ class BaseTrainer(object):
         mask = pred_label!=uk_index
         pred_binary = (pred_label==uk_index).squeeze().tolist()
         gt_binary = (gt_all==uk_index).squeeze().tolist()
+
 
         for i in gt_all.unique().tolist():
             mask = gt_all==i
@@ -275,10 +277,27 @@ class BaseTrainer(object):
         common_acc = common_sum / common_cnt
         h_score = 2 * (common_acc * uk_acc) / (common_acc + uk_acc)
         self.neptune_metric('memo-val/H-score', h_score, step=i_iter)
-        self.model.train(True)
         self.neptune_metric('memo-val/Test Accuracy[center]', acc, step=i_iter)
         self.neptune_metric('memo-val/UK classification accuracy[center]', accs.avg[uk_index], step=i_iter)
         self.neptune_metric('memo-val/Known category accuracy[center]', k_acc, step=i_iter)
+
+        valid_losses, valid_labels, valid_preds = [], [], []
+        for batch in self.valid_loader:
+            img, label, name, _ = batch
+            label = label.cuda()
+            img = img.cuda()
+            with torch.no_grad():
+                _, neck, pred, pred2 = self.model(img)
+            N = neck.shape[0]
+            simi2cluster = self.cos_simi(F.normalize(neck, p=2, dim=-1), t_centers)
+            clus_index = simi2cluster.argmax(dim=-1)
+            cls_pred = pred2.argmax(-1)
+            cls_pred_all[cnt:cnt+N] = cls_pred.squeeze()
+            memo_pred_all[cnt:cnt+N] = clus_index.squeeze()
+            gt_all[cnt:cnt+N] = label.squeeze()
+            cnt+=N
+
+        self.model.train(True)
         return acc, k_acc, h_score, bi_rec, bi_prec
 
     def get_src_centers(self):

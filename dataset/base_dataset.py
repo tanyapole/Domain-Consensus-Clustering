@@ -21,29 +21,33 @@ class BaseDataset(data.Dataset):
         self.binary_label_dict = binary_label 
 #        if self.plabel_dict is not None:
 #            print(len(self.plabel_dict), 'wewewa')
-        with open(list_path) as f:
-            for item in f.readlines():
-                #print(item)
-                feilds = item.strip()
-                name, label = feilds.split(' ')
-                label = int(label)
+        if isinstance(list_path, list):
+            all_lines = list_path
+        else:
+            with open(list_path) as f:
+                all_lines = f.readlines()
+        for item in all_lines:
+            #print(item)
+            feilds = item.strip()
+            name, label = feilds.split(' ')
+            label = int(label)
 
 #                print(name,
-                if label not in class_set and self.plabel_dict is None:
-                    continue
-                labels.append(label)
-                if label_list is not None:
-                    label = label_list[name]
-                path = osp.join(root, name)
-                if plabel_dict is not None and path not in plabel_dict:
-                    continue 
-                    print(path)
-                if not osp.exists(path):
-                    print(path)
-                    if name[0]=='/':
-                        name = name[1:]
-                    path = osp.join(root, dataset,  name)
-                self.files.append([path, int(label)])
+            if label not in class_set and self.plabel_dict is None:
+                continue
+            labels.append(label)
+            if label_list is not None:
+                label = label_list[name]
+            path = osp.join(root, name)
+            if plabel_dict is not None and path not in plabel_dict:
+                continue 
+                print(path)
+            if not osp.exists(path):
+                print(path)
+                if name[0]=='/':
+                    name = name[1:]
+                path = osp.join(root, dataset,  name)
+            self.files.append([path, int(label)])
         print('Length of {}:{}'.format(dataset, len(self.files)))
 
 
